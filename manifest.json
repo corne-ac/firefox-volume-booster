@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Extreme Volume Booster",
+  "version": "1.0.0",
+  "description": "Boost audio/video volume up to 500% using Web Audio API.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Extreme Volume Booster"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "extreme-volume-booster@firefox",
+      "strict_min_version": "109.0"
+    }
+  }
+}
