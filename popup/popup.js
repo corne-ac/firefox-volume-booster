@@ -3,6 +3,8 @@
 const slider = document.getElementById("volumeSlider");
 const label = document.getElementById("volumeLabel");
 const status = document.getElementById("status");
+const errorDetails = document.getElementById("errorDetails");
+const errorText = document.getElementById("errorText");
 
 /**
  * Tracks which tab IDs have already had the content script injected so we
@@ -18,31 +20,58 @@ function updateSliderFill(value) {
   slider.style.setProperty("--fill", `${pct}%`);
 }
 
-function setStatus(message, type) {
+function setStatus(message, type, detail) {
   status.textContent = message;
   status.className = "status" + (type ? ` ${type}` : "");
+  if (detail) {
+    errorText.textContent = detail;
+    errorDetails.hidden = false;
+  } else {
+    errorDetails.hidden = true;
+    errorText.textContent = "";
+  }
+}
+
+/** Produce a human-readable string from an error, including stack if available. */
+function errDetail(err) {
+  if (!err) return "Unknown error";
+  return err.stack || err.message || String(err);
+}
+
+/**
+ * Inject the content script into the given tab (all frames).
+ *
+ * @param {number} tabId
+ * @returns {Promise<boolean>} true if injection succeeded
+ */
+async function injectContentScript(tabId) {
+  try {
+    await browser.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ["content/content.js"],
+    });
+    injectedTabs.add(tabId);
+    return true;
+  } catch (err) {
+    // Restricted pages (about:, moz-extension:, etc.) cannot be injected into
+    const detail = errDetail(err);
+    setStatus("Cannot boost on this page.", "error", detail);
+    return false;
+  }
 }
 
 /**
  * Ensure the content script is injected into the given tab, then send the
- * SET_VOLUME message. Injection happens at most once per tab per popup session.
+ * SET_VOLUME message. If sending fails (e.g. after tab navigation), the
+ * injection cache is cleared and one re-injection + retry is attempted.
  *
  * @param {number} tabId
  * @param {number} multiplier  1.0 – 5.0
  */
 async function sendVolumeToTab(tabId, multiplier) {
   if (!injectedTabs.has(tabId)) {
-    try {
-      await browser.scripting.executeScript({
-        target: { tabId },
-        files: ["content/content.js"],
-      });
-      injectedTabs.add(tabId);
-    } catch (err) {
-      // Restricted pages (about:, moz-extension:, etc.) cannot be injected into
-      setStatus("Cannot boost on this page.", "error");
-      return;
-    }
+    const ok = await injectContentScript(tabId);
+    if (!ok) return;
   }
 
   try {
@@ -51,8 +80,23 @@ async function sendVolumeToTab(tabId, multiplier) {
       value: multiplier,
     });
     setStatus(`Boost active: ${Math.round(multiplier * 100)}%`, "active");
-  } catch (err) {
-    setStatus("Could not reach page script.", "error");
+  } catch (firstErr) {
+    // The cached injection may be stale (e.g. the tab navigated). Clear the
+    // cache, re-inject, and try once more before giving up.
+    injectedTabs.delete(tabId);
+    const ok = await injectContentScript(tabId);
+    if (!ok) return;
+
+    try {
+      await browser.tabs.sendMessage(tabId, {
+        type: "SET_VOLUME",
+        value: multiplier,
+      });
+      setStatus(`Boost active: ${Math.round(multiplier * 100)}%`, "active");
+    } catch (retryErr) {
+      const detail = errDetail(retryErr) + `\n\nFirst attempt:\n${errDetail(firstErr)}`;
+      setStatus("Could not reach page script.", "error", detail);
+    }
   }
 }
 
@@ -62,7 +106,7 @@ async function applyVolume(multiplier) {
   try {
     tabs = await browser.tabs.query({ active: true, currentWindow: true });
   } catch (err) {
-    setStatus("Could not query tabs.", "error");
+    setStatus("Could not query tabs.", "error", errDetail(err));
     return;
   }
 
