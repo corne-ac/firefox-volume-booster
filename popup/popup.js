@@ -48,7 +48,7 @@ async function injectContentScript(tabId) {
   try {
     await browser.scripting.executeScript({
       target: { tabId, allFrames: true },
-      files: ["content/content.js"],
+      files: ["../content/content.js"],
     });
     injectedTabs.add(tabId);
     return true;
