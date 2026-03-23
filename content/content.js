@@ -61,11 +61,21 @@ if (typeof window.__evbInitialized === "undefined") {
    */
   function applyVolumeToAllMedia(multiplier) {
     currentMultiplier = multiplier;
-    document.querySelectorAll("video, audio").forEach((el) => {
+    const ctx = getAudioContext();
+    // The AudioContext may be suspended if no user gesture occurred on this
+    // page (the gesture in the popup is not enough). Resume it so gain nodes
+    // take effect immediately.
+    if (ctx.state === "suspended") {
+      ctx.resume().catch((err) => {
+        console.error("[EVB] Failed to resume AudioContext:", err);
+      });
+    }
+    const elements = document.querySelectorAll("video, audio");
+    elements.forEach((el) => {
       try {
         getOrCreateGainNode(el).gain.value = multiplier;
       } catch (err) {
-        // Silently skip elements that cannot be processed (e.g. CORS-restricted)
+        console.error("[EVB] Could not apply gain to element:", el, err);
       }
     });
   }
@@ -87,7 +97,7 @@ if (typeof window.__evbInitialized === "undefined") {
           try {
             getOrCreateGainNode(el).gain.value = currentMultiplier;
           } catch (err) {
-            // Silently skip
+            console.error("[EVB] Could not apply gain to dynamically added element:", el, err);
           }
         });
       });

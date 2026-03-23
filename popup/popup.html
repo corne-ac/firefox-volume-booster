@@ -120,6 +120,45 @@
       .status.error {
         color: #f87171;
       }
+
+      .error-details {
+        margin-top: 8px;
+        font-size: 11px;
+      }
+
+      .error-details summary {
+        cursor: pointer;
+        color: #f87171;
+        user-select: none;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .error-details summary::before {
+        content: "▶";
+        font-size: 9px;
+        transition: transform 0.15s;
+      }
+
+      .error-details[open] summary::before {
+        transform: rotate(90deg);
+      }
+
+      .error-details pre {
+        margin-top: 6px;
+        padding: 8px;
+        background: #12122a;
+        border: 1px solid #3b3b5c;
+        border-radius: 4px;
+        color: #f87171;
+        font-size: 10px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 120px;
+        overflow-y: auto;
+      }
     </style>
   </head>
   <body>
@@ -146,6 +185,11 @@
     </div>
 
     <div class="status" id="status">Move the slider to boost volume</div>
+
+    <details class="error-details" id="errorDetails" hidden>
+      <summary>Show error details</summary>
+      <pre id="errorText"></pre>
+    </details>
 
     <script src="popup.js"></script>
   </body>
