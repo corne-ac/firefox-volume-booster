@@ -159,6 +159,75 @@
         max-height: 120px;
         overflow-y: auto;
       }
+
+      /* ── Advanced Controls ── */
+
+      .advanced-section {
+        margin-top: 14px;
+        border-top: 1px solid #2e2e4e;
+        padding-top: 10px;
+      }
+
+      .advanced-section > summary {
+        cursor: pointer;
+        user-select: none;
+        list-style: none;
+        font-size: 11px;
+        color: #a78bfa;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .advanced-section > summary::before {
+        content: "▶";
+        font-size: 9px;
+        transition: transform 0.15s;
+      }
+
+      .advanced-section[open] > summary::before {
+        transform: rotate(90deg);
+      }
+
+      .advanced-body {
+        margin-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .control-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: #bbb;
+      }
+
+      .control-label .value-badge {
+        color: #a78bfa;
+        font-weight: 600;
+      }
+
+      .control-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #bbb;
+      }
+
+      .control-row input[type="checkbox"] {
+        accent-color: #a78bfa;
+        width: 14px;
+        height: 14px;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
@@ -189,6 +258,48 @@
     <details class="error-details" id="errorDetails" hidden>
       <summary>Show error details</summary>
       <pre id="errorText"></pre>
+    </details>
+
+    <details class="advanced-section" id="advancedSection">
+      <summary>Show Advanced Controls</summary>
+      <div class="advanced-body">
+
+        <div class="control-row">
+          <input type="checkbox" id="reduceDistortion" checked />
+          <label for="reduceDistortion">Reduce Distortion</label>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>Compression Strength</span>
+            <span class="value-badge" id="compressionLabel">50%</span>
+          </div>
+          <div class="slider-wrapper">
+            <input type="range" id="compressionSlider" min="0" max="1" step="0.01" value="0.5" />
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>Bass Boost</span>
+            <span class="value-badge" id="bassLabel">0 dB</span>
+          </div>
+          <div class="slider-wrapper">
+            <input type="range" id="bassSlider" min="0" max="10" step="0.1" value="0" />
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>Treble Reduction</span>
+            <span class="value-badge" id="trebleLabel">0%</span>
+          </div>
+          <div class="slider-wrapper">
+            <input type="range" id="trebleSlider" min="0" max="1" step="0.01" value="0" />
+          </div>
+        </div>
+
+      </div>
     </details>
 
     <script src="popup.js"></script>
