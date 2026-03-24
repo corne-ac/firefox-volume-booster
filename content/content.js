@@ -144,18 +144,31 @@ if (typeof window.__evbInitialized === "undefined") {
   function applyConfigToElement(el, config) {
     const { gainNode, compressor, bassFilter, trebleFilter } = getOrCreateNodes(el);
 
-    // Gain staging: cap raw gain to ~2.5 to prevent hard clipping;
-    // the compressor handles perceived loudness at higher slider values.
-    gainNode.gain.value = Math.min(config.volume, 2.5);
+    // Non-linear (square-root) gain scaling to prevent hard clipping at high
+    // slider values. Examples: 1→1.0, 4→2.0, 5→≈2.24, 10→≈3.16.
+    // The compressor handles perceived loudness for the rest of the range.
+    gainNode.gain.value = Math.sqrt(config.volume);
 
     if (config.reduceDistortion) {
-      // Compression strength: 0 = minimal (ratio 2, threshold -6),
-      //                       0.5 = default (ratio 8, threshold -24),
-      //                       1 = heavy (ratio 20, threshold -40).
-      compressor.ratio.value = 1 + config.compression * 19;
+      // Base compression from user setting (0=minimal, 0.5=default, 1=heavy).
+      let ratio = 1 + config.compression * 19;
       // Keep threshold at least -6 dB so a ratio near 1:1 still provides a
       // safe headroom ceiling and avoids floating-point edge cases at 0 dB.
-      compressor.threshold.value = Math.min(-6, -config.compression * 40);
+      let threshold = Math.min(-6, -config.compression * 40);
+
+      // At high volumes (> 5) tighten the compressor to boost perceived
+      // loudness safely instead of increasing raw gain further.
+      if (config.volume > 5) {
+        // extraFactor: 0 at vol=5, 1 at vol=10 (clamped so values >10 stay safe).
+        const extraFactor = Math.min((config.volume - 5) / 5, 1);
+        ratio = Math.min(20, ratio + extraFactor * 8);           // up to ratio 20
+        // Threshold moves from user-set value down to at most −30 dB at vol=10
+        // (−24 dB base − up to 6 dB extra), increasing compression density.
+        threshold = Math.min(threshold, -24 - extraFactor * 6);
+      }
+
+      compressor.ratio.value = ratio;
+      compressor.threshold.value = threshold;
 
       // Bass boost (0–10 dB shelf at 200 Hz).
       bassFilter.gain.value = config.bassBoost;

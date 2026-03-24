@@ -164,7 +164,7 @@ function restoreSlider(inputEl, labelEl, savedValue, formatter) {
 
 browser.storage.local.get(["volumeMultiplier", "audioConfig"]).then((data) => {
   const saved = data.volumeMultiplier;
-  if (saved && saved >= 1.0 && saved <= 5.0) {
+  if (saved && saved >= 1.0 && saved <= 10.0) {
     slider.value = saved;
     label.textContent = Math.round(saved * 100);
     updateSliderFill(slider, saved);
