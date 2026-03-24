@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Extreme Volume Booster",
   "version": "1.0.0",
-  "description": "Boost audio/video volume up to 500% using Web Audio API.",
+  "description": "Boost audio/video volume up to 1000% using Web Audio API.",
   "permissions": [
     "activeTab",
     "scripting",
