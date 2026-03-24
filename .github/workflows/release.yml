@@ -3,6 +3,7 @@ name: Package and Release Firefox Extension
 on:
   push:
     branches: [main]
+  pull_request:
 
 permissions:
   contents: write
@@ -55,9 +56,11 @@ jobs:
 
       - name: Generate release tag
         id: tag
+        if: github.event_name == 'push'
         run: echo "TAG_NAME=v$(date -u +'%Y.%m.%d.%H%M')" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
+        if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.TAG_NAME }}
